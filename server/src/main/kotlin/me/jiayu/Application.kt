@@ -1,4 +1,4 @@
-package me.jiayu;
+package me.jiayu
 
 import io.ktor.application.Application
 import io.ktor.application.call
@@ -13,13 +13,13 @@ import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.websocket.WebSockets
 import io.ktor.websocket.webSocket
+import me.jiayu.db.initDatabase
 import java.time.Duration
 import java.util.*
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module(testing: Boolean = false) {
-
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
         timeout = Duration.ofSeconds(15)
@@ -27,7 +27,9 @@ fun Application.module(testing: Boolean = false) {
         masking = false
     }
 
-    val connections = Collections.synchronizedSet(setOf<Connection>())
+    val connections = Collections.synchronizedSet(LinkedHashSet<Connection>())
+
+    initDatabase(environment.config)
 
     routing {
         get("/") {
