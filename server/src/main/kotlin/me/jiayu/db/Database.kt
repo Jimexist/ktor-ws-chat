@@ -16,11 +16,11 @@ import java.io.File
 interface DAOFacade {
     suspend fun saveMessage(body: String)
 
-    suspend fun getMessages():List<String>
+    suspend fun getMessages(): List<String>
 }
 
-class DAOFacadeImpl: DAOFacade {
-    override suspend fun saveMessage(body: String):Unit= doQuery {
+class DAOFacadeImpl : DAOFacade {
+    override suspend fun saveMessage(body: String): Unit = doQuery {
         Messages.insert { it[text] = body }
     }
 
@@ -36,22 +36,21 @@ fun initDatabase(config: ApplicationConfig) {
         File(it).canonicalFile.absolutePath
     } ?: ""
     val jdbcURL = config.property("storage.jdbcURL").getString() + filePath
-    Database.connect(createHikariDatasource(url=jdbcURL,driver=driverClassName))
+    Database.connect(createHikariDatasource(url = jdbcURL, driver = driverClassName))
 
     transaction {
         SchemaUtils.create(Messages)
     }
 }
 
-private fun createHikariDatasource(url: String, driver: String)= HikariDataSource(HikariConfig().apply {
-    jdbcUrl =url
-    driverClassName=driver
-    maximumPoolSize =3
-    isAutoCommit=false
-    transactionIsolation="TRANSACTION_REPEATABLE_READ"
+private fun createHikariDatasource(url: String, driver: String) = HikariDataSource(HikariConfig().apply {
+    jdbcUrl = url
+    driverClassName = driver
+    maximumPoolSize = 3
+    isAutoCommit = false
+    transactionIsolation = "TRANSACTION_REPEATABLE_READ"
     validate()
 })
-
 
 
 object Messages : Table() {
@@ -60,4 +59,4 @@ object Messages : Table() {
     override val primaryKey = PrimaryKey(id)
 }
 
-private suspend fun <T> doQuery(block: ()->T):T= newSuspendedTransaction(Dispatchers.IO) { block() }
+private suspend fun <T> doQuery(block: () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
