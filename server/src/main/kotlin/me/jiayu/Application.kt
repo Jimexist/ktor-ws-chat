@@ -13,6 +13,7 @@ import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.websocket.WebSockets
 import io.ktor.websocket.webSocket
+import me.jiayu.db.DAOFacadeImpl
 import me.jiayu.db.initDatabase
 import java.time.Duration
 import java.util.*
@@ -31,6 +32,8 @@ fun Application.module(testing: Boolean = false) {
 
     initDatabase(environment.config)
 
+    val db = DAOFacadeImpl()
+
     routing {
         get("/") {
             call.respondText("Hello, world!")
@@ -41,9 +44,12 @@ fun Application.module(testing: Boolean = false) {
             connections += c
             c.session.send("Welcome to the chat. There are ${connections.size} users are online")
 
+            db.getMessages().forEach { c.session.send(it) }
+
             for (frame in incoming) {
                 val f = frame as? Frame.Text ?: continue
                 val message = "${c.name} ${f.readText()}"
+                db.saveMessage(message)
                 connections.forEach { it.session.send(message) }
             }
         }

@@ -3,11 +3,32 @@ package me.jiayu.db
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.config.ApplicationConfig
+import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
+
+interface DAOFacade {
+    suspend fun saveMessage(body: String)
+
+    suspend fun getMessages():List<String>
+}
+
+class DAOFacadeImpl: DAOFacade {
+    override suspend fun saveMessage(body: String):Unit= doQuery {
+        Messages.insert { it[text] = body }
+    }
+
+    override suspend fun getMessages(): List<String> = doQuery {
+        Messages.selectAll().map { it[Messages.text] }
+    }
+
+}
 
 fun initDatabase(config: ApplicationConfig) {
     val driverClassName = config.property("storage.driverClassName").getString()
@@ -38,3 +59,5 @@ object Messages : Table() {
     val text = varchar("body", 1024)
     override val primaryKey = PrimaryKey(id)
 }
+
+private suspend fun <T> doQuery(block: ()->T):T= newSuspendedTransaction(Dispatchers.IO) { block() }
